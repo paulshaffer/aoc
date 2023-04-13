@@ -18,7 +18,7 @@ ubyte[ubyte] unqRateToVlv;
 size_t rT; // total of all flow rates
 ubyte firstVlv = 1;
 ubyte idByte;
-ubyte time;
+// ubyte time;
 Path currPath, bestPath;
 
 // Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -77,7 +77,7 @@ writeln(progEndTime - progStartTime);
 // Timed main() ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 struct Valve {
-	size_t rate = 0;
+	ubyte rate = 0;
 	ubyte[] nextVlvs;
 	ubyte nextVlv = 0;
 	private byte i = -1;
@@ -166,17 +166,19 @@ void loadFileDataIntoValve_aa() {
 	}
 }
 
-void move(ubyte v) {
-	currPath.p[time]    = v;
-	currPath.r[time]    = vlv[v].rate;
+void move(ubyte v, ubyte time) {
+	time++;
+	currPath.p[time] = v;
+	currPath.r[time] = vlv[v].visited ? 0 : vlv[v].rate;
+	vlv[v].visited = true;
 
 	if(time < 28) {
-		for(; vlv[v].i < vlv[v].nextVlv.length; vlv[v].i++) {
-			time++;
-			move(vlv[v].nextVlv[vlv[]]);
+		for(; vlv[v].i < vlv[v].nextVlvs.length; vlv[v].i++) {
+
+			// move(vlv[v].nextVlvs[vlv[v]]);
 		}
 
-	} else if( time = 28) {
+	} else if( time == 28) {
 
 	} else { //time > 28
 		fo.writeln("Error.  Time > 28 minutes.");
