@@ -1,30 +1,28 @@
-﻿import std.stdio : writeln;
-import std.algorithm : map;
-import std.range : iota;
-import std.parallelism : taskPool;
+﻿module aoc2216a;
+
+import std.regex;
+import std.stdio;
+import std.file;
 import core.time: MonoTime;
+File fo;
 
-/* On Intel i7-3930X and gdc 9.3.0:
- * 5140ms using std.algorithm.reduce
- * 888ms using std.parallelism.taskPool.reduce
- *
- * On AMD Threadripper 2950X, and gdc 9.3.0:
- * 2864ms using std.algorithm.reduce
- * 95ms using std.parallelism.taskPool.reduce
- */
-void main()
+// Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
+void main(string[] args) {
+auto progStartTime = MonoTime.currTime;
+//-----------------------------------------------------------------------------
+	string filename = args.length > 1 ? args[1] : "aoc2216a.data";
+	fo = File("tempout.data","w");
 
-{
-  auto progStartTime = MonoTime.currTime;
+	auto s = readText(filename);
+  //string s = "fhthgfh, AB, CD,dfgdg EF, GH, IJ\n, KL, MNdfgf, OP, QR, ST, UV\n";
+	//auto ctr = ctRegex!(`Valve ([A-Z]{2}).*=(\d+).+?([A-Z]{2})(, [A-Z]{2})*`);
+	auto ctr = ctRegex!(`Valve ([A-Z]{2}).*valves( ([A-Z]{2}))+`);
+	foreach (c; matchAll(s, ctr)) {
+		fo.writeln(c);
+	}
 
-  auto nums = iota(1.0, 1_000_000_000.0);
-
-  auto x = taskPool.reduce!"a + b"(
-      0.0, map!"1.0 / (a * a)"(nums)
-  );
-
-  writeln("Sum: ", x);
-
-  auto progEndTime = MonoTime.currTime;
+//-----------------------------------------------------------------------------
+auto progEndTime = MonoTime.currTime;
 writeln(progEndTime - progStartTime);
 }
+// Timed main() ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

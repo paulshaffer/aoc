@@ -107,9 +107,8 @@ auto progStartTime = MonoTime.currTime;
 
 	// Extra work to explore whether or not there is more than one path equal
 	// in moves to the shortest path
-	writeRouteArrows(endingNode, startingNode);
-	writeSolvedPath();
-
+	//writeRouteArrows(endingNode, startingNode);
+	//writeSolvedPath();
 
 
 
@@ -134,7 +133,6 @@ void writeRouteArrows(Location currNode, Location startingNode) {
 		}
 		currNode = Location(prevRow, prevCol);
 	}
-
 }
 
 void writeSolvedPath() {

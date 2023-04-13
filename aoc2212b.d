@@ -30,32 +30,34 @@ auto progStartTime = MonoTime.currTime;
 	// File f  = File("temp2.data");
 	File f  = File("aoc2212a.data");
 	File fo = File("tempout.data","w");
-	Location startingNode;
+	Location startingNode, endingNode;
 	size_t row;
 	while(!f.eof()) {
 		auto line = f.readln.strip; 
 		foreach(size_t col,c;line) {
 			grid[row][col].height = c; // read-in height data
-			
+			if (c == 'S') {
+				grid[row][col].height = 'a';
+				startingNode = Location(row, col);
+			}
 			if (c == 'E') {
 				grid[row][col].height = 'z';
-				startingNode = Location(row, col);
+				endingNode = Location(row, col);
 			}
 		}
 		row++;
 	}
 
 	// Breadth First Search
-	Location[] queue; queue ~= startingNode;
+	Location[] queue; queue ~= endingNode;
 	while(queue.length > 0)
 		{
 		auto thisRow = queue[0].row;
 		auto thisCol = queue[0].col;
-	fo.write(" ",thisRow,"-",thisCol);
 		auto thisMoves = grid[thisRow][thisCol].movesFromStart;
 		auto thisNodeHeight = grid[thisRow][thisCol].height;
 
-		if(thisNodeHeight == 'a') break; //found route to 'a'
+		if(queue[0] == startingNode) break; //found route to start
 		
 		// check next row up
 		if(	(thisRow > 0) && 
