@@ -165,7 +165,7 @@ void loadFileDataIntoValve_aa() {
 		 }
 	}
 }
-
+// call function 1st time with v=1, time = -1
 void move(ubyte v, ubyte time) {
 	time++;
 	currPath.p[time] = v;
@@ -173,14 +173,17 @@ void move(ubyte v, ubyte time) {
 	vlv[v].visited = true;
 
 	if(time < 28) {
-		for(; vlv[v].i < vlv[v].nextVlvs.length; vlv[v].i++) {
-
-			// move(vlv[v].nextVlvs[vlv[v]]);
+		while(!vlv[v].lastVlvOption) {
+			vlv[v].nextVlvOption();
+			move(vlv[v].nextVlv, time);
 		}
-
-	} else if( time == 28) {
-
+	} else if(time == 28) {
+		if(optimizedPath() < bestPath.total) bestPath = currPath;
 	} else { //time > 28
-		fo.writeln("Error.  Time > 28 minutes.");
+		fo.writeln("Error.  Time > 28 minutes: time: ",time,"\n",currPath);
 	}
+}
+
+void optimizedPath() {
+	
 }
