@@ -117,11 +117,14 @@ void loadFileDataIntoValve_aa() {
 		// create a rate-to-valve-id lookup and test if each flow rate
 		// is a unique value
 		 if(vlvRate > 0) {
+			flowVlvs[idByte] = 1;
 			if(vlvRate !in unqRateToVlv) {
 				unqRateToVlv[vlvRate] = idByte;
 			} else {
 				writeln("Valve flow rates are not unique values.");
 			}
+		 } else {
+			zeroVlvs[idByte] = 1;
 		 }
 	}
 }
@@ -175,22 +178,30 @@ void printTimeCostTable() {
 }
 
 void eliminateZeroRateValves() {
-	for(ubyte zeroVlv=1; zeroVlv <= vlv.length; zeroVlv++) {
-		if(vlv[zeroVlv].rate > 0) {
-			flowVlvs[zeroVlv] = 1;
-			continue;
-		}
+	// bool aZeroRateVlvWasEliminated = true;
+	// while(aZeroRateVlvWasEliminated) {
+		// aZeroRateVlvWasEliminated = false;
+		// find a zero rate valve
+		foreach(ubyte zeroVlv; zeroVlvs.keys.sort) {
+			if(zeroVlv == 1) continue;
 
-		zeroVlvs[zeroVlv] = 1;
-		for(ubyte tableRow =1; tableRow <= vlv.length; tableRow++) {
-			if(tableRow == zeroVlv) continue;
-			if(timeCost[tableRow][zeroVlv] == 0) continue;
+			for(ubyte tableRow = 1; tableRow <= vlv.length; tableRow++) {
+				if(tableRow == zeroVlv) continue;
 
-			foreach(toVlv;vlv[zeroVlv].nextVlvs) {
-				timeCost[tableRow][toVlv] = timeCost[tableRow][zeroVlv] + 1;
+				// if no ref to this zero valve in this row go for another row
+				if(timeCost[tableRow][zeroVlv] == 0) continue;
+
+				fo.writeln(vlv[zeroVlv]," ",tableRow," ",zeroVlv," ",timeCost[tableRow][zeroVlv]);
+				for(ubyte toVlv = 1; toVlv <= vlv.length; toVlv++) {
+					if(tableRow == toVlv) continue;
+					if(timeCost[zeroVlv][toVlv] == 0) continue;
+					if((timeCost[tableRow][toVlv] > timeCost[zeroVlv][toVlv] + 1) &&
+					   (timeCost[tableRow][toVlv] == 0)) {
+						timeCost[tableRow][toVlv] = timeCost[zeroVlv][toVlv] + 1;
+					}
+				}
+				timeCost[tableRow][zeroVlv] = 0;
 			}
-			// eliminate table reference to valve
-			timeCost[tableRow][zeroVlv] = 0;
 		}
-	}
+	// }
 }
