@@ -5,6 +5,7 @@ import std.file;
 import std.conv: to;
 import std.string;
 import std.algorithm: sort;
+import std.algorithm.iteration: permutations;
 import std.range: iota, repeat;
 import std.array;
 import std.traits;
@@ -24,7 +25,7 @@ ubyte[ubyte] flowVlvs;
 size_t rT; // total of all flow rates
 ubyte firstVlv = 1;
 ubyte idByte;
-uint[60][60] timeCost;
+int[60][60] timeCost;
 
 
 // Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -53,16 +54,20 @@ auto progStartTime = MonoTime.currTime;
 	printTimeCostTable();
 
 	eliminateZeroRateValves();
+	// for(ubyte i = 1; i<=vlv.length; i++) timeCost[i][i] = 99;
 
 	fo.writeln("\n");
-	printTimeCostTable();
+	printTimeCostTable2();
 
-	fo.writeln("\n");
+	fo.write("\nFlow Valves: ");
 	foreach(key;flowVlvs.keys.sort) if(flowVlvs[key]) fo.writef("%3s",key);
-	fo.writeln();
+	fo.write("\nZero Valves: ");
 	foreach(key;zeroVlvs.keys.sort) if(zeroVlvs[key]) fo.writef("%3s",key);
 	fo.writeln();
 
+	fo.writeln("timeCost table is symetrical: ",isSymetrical);
+
+	writeln(iota(1,5,1).permutations);
 
 //-----------------------------------------------------------------------------
 auto progEndTime = MonoTime.currTime;
@@ -158,50 +163,83 @@ void fillTimeCostTable() {
 
 void printTimeCostTable() {
 	string header = "   ";
-	foreach(num;iota(1,59,1)) header ~= format("%3s",num);
+	foreach(num;iota(1,vlv.length+1,1)) {
+		// if((cast(ubyte) num !in zeroVlvs) || (num == 1))
+		header ~= format("%3s",num);
+	}
 	fo.writeln(header);
 	fo.writeln(repeat('-',177));
 	for(ubyte fromVlv=1; fromVlv <= vlv.length; fromVlv++) {
+		// if((fromVlv in zeroVlvs) && (fromVlv != 1)) continue;
 		fo.writef("%2s>",fromVlv);
 		for(ubyte toVlv=1; toVlv <= vlv.length; toVlv++) {
-			if((toVlv%10 ==1) && (toVlv > 10)) {
-				fo.writef(":%2s",timeCost[fromVlv][toVlv]);
-			} else {
-				fo.writef("%3s",timeCost[fromVlv][toVlv]);
-			}
+			// if((toVlv in zeroVlvs) && (toVlv != 1)) continue;
+			fo.writef("%3s",timeCost[fromVlv][toVlv]);
 		}
 		fo.writefln(" <%2s",fromVlv);
-		if(fromVlv%10 == 0) fo.writeln(repeat('-',177));
+		if((fromVlv%10 == 0) && (fromVlv != vlv.length)) {
+			fo.writeln(repeat('-',177));
+		}
 	}
 	fo.writeln(repeat('-',177));
 	fo.writeln(header);
 }
 
-void eliminateZeroRateValves() {
-	// bool aZeroRateVlvWasEliminated = true;
-	// while(aZeroRateVlvWasEliminated) {
-		// aZeroRateVlvWasEliminated = false;
-		// find a zero rate valve
-		foreach(ubyte zeroVlv; zeroVlvs.keys.sort) {
-			if(zeroVlv == 1) continue;
-
-			for(ubyte tableRow = 1; tableRow <= vlv.length; tableRow++) {
-				if(tableRow == zeroVlv) continue;
-
-				// if no ref to this zero valve in this row go for another row
-				if(timeCost[tableRow][zeroVlv] == 0) continue;
-
-				fo.writeln(vlv[zeroVlv]," ",tableRow," ",zeroVlv," ",timeCost[tableRow][zeroVlv]);
-				for(ubyte toVlv = 1; toVlv <= vlv.length; toVlv++) {
-					if(tableRow == toVlv) continue;
-					if(timeCost[zeroVlv][toVlv] == 0) continue;
-					if((timeCost[tableRow][toVlv] > timeCost[zeroVlv][toVlv] + 1) &&
-					   (timeCost[tableRow][toVlv] == 0)) {
-						timeCost[tableRow][toVlv] = timeCost[zeroVlv][toVlv] + 1;
-					}
-				}
-				timeCost[tableRow][zeroVlv] = 0;
-			}
+void printTimeCostTable2() {
+	string header = "   ";
+	foreach(num;iota(1,vlv.length+1,1)) {
+		if((cast(ubyte) num !in zeroVlvs) || (num == 1))
+		header ~= format("%3s",num);
+	}
+	fo.writeln(header);
+	fo.writeln(repeat('-',((flowVlvs.length+1)*3)+7));
+	for(ubyte fromVlv=1; fromVlv <= vlv.length; fromVlv++) {
+		if((fromVlv in zeroVlvs) && (fromVlv != 1)) continue;
+		fo.writef("%2s>",fromVlv);
+		for(ubyte toVlv=1; toVlv <= vlv.length; toVlv++) {
+			if((toVlv in zeroVlvs) && (toVlv != 1)) continue;
+			fo.writef("%3s",timeCost[fromVlv][toVlv]);
 		}
-	// }
+		fo.writefln(" <%2s",fromVlv);
+	}
+	fo.writeln(repeat('-',((flowVlvs.length+1)*3)+7));
+	fo.writeln(header);
+}
+
+void eliminateZeroRateValves() {
+	// find a zero rate valve
+	foreach(ubyte zeroVlv; zeroVlvs.keys.sort) {
+		if(zeroVlv == 1) continue;
+
+		for(ubyte tableRow = 1; tableRow <= vlv.length; tableRow++) {
+			if(tableRow == zeroVlv) continue;
+
+			// if no ref to this zero valve in this row go for another row
+			if(timeCost[tableRow][zeroVlv] == 0) continue;
+
+			fo.writeln(zeroVlv," ",vlv[zeroVlv]," tr=",tableRow," tC[",tableRow,"][",zeroVlv,"]=",timeCost[tableRow][zeroVlv]);
+			for(ubyte toVlv = 1; toVlv <= vlv.length; toVlv++) {
+				if(tableRow == toVlv) continue;
+				if(timeCost[zeroVlv][toVlv] == 0) continue;
+				if((timeCost[tableRow][toVlv] > timeCost[tableRow][zeroVlv] + timeCost[zeroVlv][toVlv]) ||
+					(timeCost[tableRow][toVlv] == 0)) {
+					timeCost[tableRow][toVlv] = timeCost[tableRow][zeroVlv] + timeCost[zeroVlv][toVlv];
+				}
+			}
+			timeCost[tableRow][zeroVlv] = 0;
+		}
+		for(ubyte toVlv = 1; toVlv <= vlv.length; toVlv++) timeCost[zeroVlv][toVlv] = 0;
+		//if(zeroVlv == 6) break;
+	}
+}
+
+bool isSymetrical() {
+	bool result = false;
+	for(ubyte row =1; row <= vlv.length; row++) {
+		for(ubyte col =1; col <= vlv.length; col++) {
+			if(timeCost[row][col] != timeCost[col][row]) return result;
+		}
+	}
+	result = true;
+	return result;
 }
