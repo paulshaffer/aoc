@@ -26,6 +26,7 @@ size_t rT; // total of all flow rates
 ubyte firstVlv = 1;
 ubyte idByte;
 int[60][60] timeCost;
+bool[60][60] visited;
 
 
 // Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -66,6 +67,8 @@ auto progStartTime = MonoTime.currTime;
 	fo.writeln();
 
 	fo.writeln("timeCost table is symetrical: ",isSymetrical);
+
+	shortestPathBetweenEachPairOfNodes();
 
 	writeln(iota(1,5,1).permutations);
 
@@ -243,3 +246,12 @@ bool isSymetrical() {
 	result = true;
 	return result;
 }
+
+void shortestPathBetweenEachPairOfNodes();
+
+//	1. start with node 1 and find the shortest path to each other node
+//	then iterate through the remaining nodes.
+//		2. using node number and DISTANCE to this node add nodes to visit
+//		to the queue (queue will have current distance and node number);
+// 		update the timeCost table with this nodes DISTANCE
+// 		3. if there are more nodes on the queue, pull one off.
