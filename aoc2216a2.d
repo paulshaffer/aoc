@@ -21,12 +21,12 @@ string[ubyte] vlvUbyteToTextLookup;
 ubyte[ubyte] unqRateToVlv;
 ubyte[ubyte] zeroVlvs;
 ubyte[ubyte] flowVlvs;
+// ubyte[ubyte] sourceVlvs;
 
 size_t rT; // total of all flow rates
 ubyte firstVlv = 1;
 ubyte idByte;
 int[60][60] timeCost;
-bool[60][60] visited;
 
 
 // Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -58,6 +58,17 @@ auto progStartTime = MonoTime.currTime;
 	// for(ubyte i = 1; i<=vlv.length; i++) timeCost[i][i] = 99;
 
 	fo.writeln("\n");
+
+	auto sourceVlvs = flowVlvs.dup;
+	sourceVlvs[1] = 1;
+	fo.writeln(sourceVlvs);
+	foreach(fromVlv;sourceVlvs) {
+		foreach(toVlv;sourceVlvs) {
+			if(fromVlv == toVlv) continue;
+			if(timeCost[fromVlv][toVlv] == 0) timeCost[fromVlv][toVlv] = 999;
+		}
+	}
+
 	printTimeCostTable2();
 
 	fo.write("\nFlow Valves: ");
@@ -70,7 +81,7 @@ auto progStartTime = MonoTime.currTime;
 
 	shortestPathBetweenEachPairOfNodes();
 
-	writeln(iota(1,5,1).permutations);
+	//writeln(iota(1,5,1).permutations);
 
 //-----------------------------------------------------------------------------
 auto progEndTime = MonoTime.currTime;
@@ -247,11 +258,47 @@ bool isSymetrical() {
 	return result;
 }
 
-void shortestPathBetweenEachPairOfNodes();
+void shortestPathBetweenEachPairOfNodes() {
 
+	struct Vlv {ubyte num; ubyte dist;}
+	Vlv[] vlvs;
+	bool[60][60] visited;
+	
+	auto sourceVlvs = flowVlvs.dup;
+	sourceVlvs[1] = 1;
+	fo.writeln(sourceVlvs);
+
+	foreach(fromVlv;sourceVlvs) {
+		foreach(toVlv;sourceVlvs) {
+			if(fromVlv == toVlv) continue;
+			if(timeCost[fromVlv][toVlv] == 0) {
+				timeCost[fromVlv][toVlv] = 999;
+			}
+		}
+	}
+	printTimeCostTable2();
+
+
+
+	// foreach(srcVlv;sourceVlvs.keys.sort) {
+	// 	vlvs ~= Vlv(srcVlv, 0);
+	// 	while(vlvs.length > 0) {
+	// 		foreach(toVlv;sourceVlvs.keys.sort) {
+	// 			if(toVlv == srcVlv) continue;
+	// 			if(timeCost[vlvs[0].num][toVlv] == 0) continue;
+	// 			if(timeCost[vlvs[0].num][toVlv] + vlvs[0].dist < 
+	// 				timeCost[srcVlv][toVlv]) {
+	// 				timeCost[srcVlv][toVlv] = timeCost[vlvs[0].num][toVlv] + vlvs[0].dist;
+	// 			}
+	// 		}
+
+	// 	}
+	// }
+}
 //	1. start with node 1 and find the shortest path to each other node
 //	then iterate through the remaining nodes.
 //		2. using node number and DISTANCE to this node add nodes to visit
 //		to the queue (queue will have current distance and node number);
-// 		update the timeCost table with this nodes DISTANCE
+// 		update the timeCost table with this nodes DISTANCE and mark node
+// 		visited;
 // 		3. if there are more nodes on the queue, pull one off.
