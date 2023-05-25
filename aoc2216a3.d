@@ -20,11 +20,13 @@ string[ubyte] vlvUbyteToTextLookup;
 ubyte[ubyte] vlvToRate;
 ubyte[ubyte] zeroVlvs;
 ubyte[ubyte] flowVlvs;
+ubyte[ubyte] flowVand1;
+ubyte[] arr;
 // ubyte[ubyte] sourceVlvs;
 
 ubyte firstVlv = 1;
 ubyte vlvNum;
-ubyte[60][60] timeCost;
+ubyte[60][60] timeCost, tc2;
 
 
 // Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -43,20 +45,20 @@ auto progStartTime = MonoTime.currTime;
 	fillTableWith99();
 
 	if(allGraphEdgesBidirectional) {
-		writeln("All edges are bidirectional.  Graph is undirected.");
+		fo.writeln("All edges are bidirectional.  Graph is undirected.");
 	} else {
-		writeln("Some graph edges are unidirectional");
+		fo.writeln("Some graph edges are unidirectional");
 	}
 
-	printTimeCostTable();
+	// printTimeCostTable();
 
 	eliminateZeroRateValves();
 
-	fo.writeln("\n");
-	printTimeCostTable();
+	// fo.writeln("\n");
+	// printTimeCostTable();
 
-	fo.writeln("\n");
-	printTimeCostTable2();
+	// fo.writeln("\n");
+	// printTimeCostTable2(timeCost);
 
 	fo.write("\nFlow Valves: ");
 	foreach(key;flowVlvs.keys.sort) if(flowVlvs[key]) fo.writef("%3s",key);
@@ -64,10 +66,26 @@ auto progStartTime = MonoTime.currTime;
 	foreach(key;zeroVlvs.keys.sort) if(zeroVlvs[key]) fo.writef("%3s",key);
 	fo.writeln();
 
-	fo.writeln("timeCost table is symetrical: ",isSymetrical);
+	fo.writeln("timeCost table is symetrical: ",isSymetrical(timeCost));
 
 	shortestPathBetweenEachPairOfNodes();
+	
+	fo.writeln("\n");
+	printTimeCostTable2(timeCost);
+	printTimeCostTable2(tc2);
 
+	add1ToTable();
+	printTimeCostTable2(tc2);
+	fo.writeln("tc table is symetrical: ",isSymetrical(tc2));
+
+	arr = flowVand1.keys;
+	arr.sort;
+	fo.writeln(arr);
+
+	bool flag = permutate(arr);
+	fo.writeln(arr);
+
+	
 //-----------------------------------------------------------------------------
 auto progEndTime = MonoTime.currTime;
 writeln(progEndTime - progStartTime);
@@ -119,7 +137,7 @@ void loadFileDataIntoValve_aa() {
 void fillTableWith99() {
 	for(ulong fromVlv = 1; fromVlv <= vlvNum; fromVlv++) {
 		for(ulong toVlv = 1; toVlv <= vlvNum; toVlv++) {
-			if(timeCost[fromVlv][toVlv] == 0) {
+			if((timeCost[fromVlv][toVlv] == 0) && (fromVlv != toVlv)){
 				timeCost[fromVlv][toVlv] = 99;
 			}
 		}
@@ -156,7 +174,7 @@ void printTimeCostTable() {
 	fo.writeln(header);
 }
 
-void printTimeCostTable2() {
+void printTimeCostTable2(ubyte[60][60] tc) {
 	string header = "   ";
 	foreach(num;iota(1,vlvNum+1,1)) {
 		if((cast(ubyte) num !in zeroVlvs) || (num == 1))
@@ -169,7 +187,7 @@ void printTimeCostTable2() {
 		fo.writef("%2s>",fromVlv);
 		for(ubyte toVlv=1; toVlv <= vlvNum; toVlv++) {
 			if((toVlv in zeroVlvs) && (toVlv != 1)) continue;
-			fo.writef("%3s",timeCost[fromVlv][toVlv]);
+			fo.writef("%3s",tc[fromVlv][toVlv]);
 		}
 		fo.writefln(" <%2s",fromVlv);
 	}
@@ -188,7 +206,7 @@ void eliminateZeroRateValves() {
 			// if no ref to this zero valve in this row go for another row
 			if(timeCost[tableRow][zeroVlv] == 0) continue;
 
-			fo.writeln(zeroVlv," tr=",tableRow," tC[",tableRow,"][",zeroVlv,"]=",timeCost[tableRow][zeroVlv]);
+			// fo.writeln(zeroVlv," tr=",tableRow," tC[",tableRow,"][",zeroVlv,"]=",timeCost[tableRow][zeroVlv]);
 			for(ubyte toVlv = 1; toVlv <= vlvNum; toVlv++) {
 				if(tableRow == toVlv) continue;
 				if(timeCost[zeroVlv][toVlv] == 0) continue;
@@ -204,53 +222,78 @@ void eliminateZeroRateValves() {
 	}
 }
 
-bool isSymetrical() {
-	bool result = false;
+bool isSymetrical(ubyte[60][60] tc) {
+	bool result = true;
 	for(ubyte row =1; row <= vlvNum; row++) {
 		for(ubyte col =1; col <= vlvNum; col++) {
-			if(timeCost[row][col] != timeCost[col][row]) return result;
+			if(tc[row][col] != tc[col][row]) {
+				fo.writeln("row ",row,"  col ",col,"   rcDist ",tc[row][col]);
+				result = false;
+			}
 		}
 	}
-	result = true;
 	return result;
 }
 
 void shortestPathBetweenEachPairOfNodes() {
-
-	struct Valve {ubyte num; ubyte dist;}
-	Valve[] valves;
-	bool[60][60] visited;
+	tc2 = timeCost;
+	ubyte[ubyte] valves;
+	ubyte currVlv;
 	
-	auto flowVplus1 = flowVlvs.dup;
-	flowVplus1[1] = 1;
-	fo.writeln(flowVplus1.keys.sort);
+	flowVand1 = flowVlvs.dup;
+	flowVand1[1] = 1;
 
-	foreach(srcVlv;flowVplus1.keys.sort) {
-		valves ~= Valve(srcVlv, 0);
-		foreach(ref v;flowVplus1) v = 0;
+	foreach(startVlv;flowVand1.keys.sort) {
+		valves.clear;
+		valves[startVlv] = 0;
+		currVlv = startVlv;
 
+		foreach(ref val;flowVand1) val = 0;
+		flowVand1[startVlv] = 1;
+		
 		while(valves.length > 0) {
-			foreach(toVlv;flowVplus1.keys.sort) {
-				if(toVlv == srcVlv) continue;
-				if(timeCost[valves[0].num][toVlv] == 99) continue;
-				if(timeCost[valves[0].num][toVlv] + vlvs[0].dist < 
-					timeCost[srcVlv][toVlv]) {
-					timeCost[srcVlv][toVlv] = timeCost[vlvs[0].num][toVlv] + vlvs[0].dist;
-
-					// if valve not visited, add to queue
-					if(flowVplus1[toVlv] == 0) {
-						valves ~= Valve(toVlv,timeCost[srcVlv][toVlv]);
-					}
+			// fo.writeln(valves);
+			// fo.write(currVlv);
+			foreach(toVlv;flowVand1.keys.sort) {
+				if(toVlv == currVlv) continue;
+				if(timeCost[currVlv][toVlv] == 99) continue;
+				// fo.write(" ",toVlv);
+				if(tc2[startVlv][currVlv] + timeCost[currVlv][toVlv] < 
+					tc2[startVlv][toVlv]) {
+					tc2[startVlv][toVlv] = to!ubyte(tc2[startVlv][currVlv]
+					                              + timeCost[currVlv][toVlv]);
+				}
+				// if valve not visited, add to queue
+				if(flowVand1[toVlv] == 0) {
+					valves[toVlv] = 0;
+					flowVand1[toVlv] = 1;
 				}
 			}
-			flowVplus1[toVlv] = 1;
+			// fo.writeln();
+			valves.remove(currVlv);
+
+			ubyte time = 255;
+			currVlv = 0;
+			foreach(v;valves.keys) {
+				if((v != startVlv) && (tc2[startVlv][v] < time)) {
+					time = tc2[startVlv][v];
+					currVlv = v;
+				}
+			}
 		}
 	}
 }
-//	1. start with node 1 and find the shortest path to each other node
-//	then iterate through the remaining nodes.
-//		2. using node number and DISTANCE to this node add nodes to visit
-//		to the queue (queue will have current distance and node number);
-// 		update the timeCost table with this nodes DISTANCE and mark node
-// 		visited;
-// 		3. if there are more nodes on the queue, pull one off.
+
+void add1ToTable() {
+	foreach(fromVlv;flowVand1.keys.sort) {
+		foreach(toVlv;flowVand1.keys.sort) {
+			if(fromVlv==toVlv) continue;
+			tc2[fromVlv][toVlv]++;
+		}
+	}
+}
+
+// ubyte array sorted in ascending order
+bool permutate(ref ubyte a) { //0=original, 1=permutated
+	if(permutate(a[1..$]))
+}
