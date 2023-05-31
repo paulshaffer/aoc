@@ -1,4 +1,4 @@
-﻿module aoc2216a3;
+﻿module aoc2216b;
 
 import std.stdio;
 import std.file;
@@ -20,14 +20,16 @@ ubyte[ubyte] vlvToRate;
 ubyte[ubyte] zeroVlvs;
 ubyte[ubyte] flowVlvs;
 ubyte[ubyte] flowVandAA;
+ubyte[ubyte] myArr;
+ubyte[ubyte] elephantArr;
 ubyte[] arr, saveArr;
-int totalflow, bestflow;
+int totalflow, bestflow, partBtotal;
 // ubyte[ubyte] sourceVlvs;
 
 ubyte firstVlv;
 ubyte vlvNum;
 ubyte[60][60] timeCost, tc2;
-
+enum totalTime = 26;
 
 // Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 void main(string[] args) {
@@ -79,60 +81,35 @@ auto progStartTime = MonoTime.currTime;
 	fo.writeln("tc table is symetrical: ",isSymetrical(tc2));
 
 	auto algoStartTime = MonoTime.currTime;
+
 	arr = flowVlvs.keys;
 	arr.sort;
 	fo.writeln(arr);
+	findBestPath();
+	partBtotal = bestflow;
 
-	size_t loopcnt, breakcnt;
-	do {
-		int rate = 0;
-		ubyte fromVlv = firstVlv, timecost = 0;
-		int timeleft = 30;
-		totalflow = 0;
-		foreach(size_t i, toVlv; arr) {
-			rate = vlvToRate[toVlv];
-			timecost = tc2[fromVlv][toVlv];
-
-			if(timeleft - timecost < 1) {
-				arr[i+1..$].sort!("a > b");
-				breakcnt++;
-				break;
-			} else {
-				timeleft -= timecost;
-				totalflow += timeleft * rate;
-				fromVlv = toVlv;
-			}
+	fo.writeln(myArr);
+	foreach(k,v;flowVlvs) {
+		if(k in myArr) {
+			continue;
+		} else {
+			elephantArr[k] = 0;
+			fo.write(k," ");
 		}
+	}
+	fo.writeln();
+	fo.writeln(elephantArr);
 
-		if(totalflow >= bestflow) {
-			bestflow = totalflow;
-			saveArr = arr.dup;
-		}
+	arr.length = 0;
+	arr = elephantArr.keys;
+	arr.sort;
+	fo.writeln(arr);
+	findBestPath();
+	partBtotal += bestflow;
+	fo.writeln(partBtotal);
 
-		loopcnt++;
-	} while(nextPermutation(arr));
 	auto algoEndTime = MonoTime.currTime;
 
-	fo.writeln("loops ",loopcnt,"   breaks ",breakcnt);
-	fo.writefln("total possible perms %,3s",fact(to!ulong(flowVlvs.length)));
-	fo.writefln("perms avoided        %,3s",fact(to!ulong(flowVlvs.length)) - breakcnt);
-	fo.writeln("best flow ",bestflow);
-	fo.writeln(saveArr); writeln(saveArr);
-
-	ubyte pv = firstVlv;
-	int tl = 30;
-	totalflow = 0;
-	fo.writeln("NN TX TC RT*TL= FL");
-	foreach(v;saveArr) {
-		tl -= tc2[pv][v];
-		if(tl < 0) break;
-		fo.writefln("%2s %2s %2s %2s*%2s=%3s",
-			v,vlvUbyteToTextLookup[v],tc2[pv][v],vlvToRate[v],
-			tl, tl*vlvToRate[v]);
-			totalflow += tl*vlvToRate[v];
-			pv = v;
-	}
-	fo.writefln("              %4s",totalflow);
 //-----------------------------------------------------------------------------
 auto progEndTime = MonoTime.currTime;
 writeln(algoEndTime - algoStartTime);
@@ -344,4 +321,58 @@ void add1ToTable() {
 
 ulong fact(ulong n){
 	return n>=2 ? (n) * fact(n-1) : 1;
+}
+
+void findBestPath() {
+	bestflow = 0;
+	size_t loopcnt, breakcnt;
+	do {
+		int rate = 0;
+		ubyte fromVlv = firstVlv, timecost = 0;
+		int timeleft = totalTime;
+		totalflow = 0;
+		foreach(size_t i, toVlv; arr) {
+			rate = vlvToRate[toVlv];
+			timecost = tc2[fromVlv][toVlv];
+
+			if(timeleft - timecost < 1) {
+				arr[i+1..$].sort!("a > b");
+				breakcnt++;
+				break;
+			} else {
+				timeleft -= timecost;
+				totalflow += timeleft * rate;
+				fromVlv = toVlv;
+			}
+		}
+
+		if(totalflow >= bestflow) {
+			bestflow = totalflow;
+			saveArr = arr.dup;
+		}
+
+		loopcnt++;
+	} while(nextPermutation(arr));
+
+	fo.writeln("loops ",loopcnt,"   breaks ",breakcnt);
+	fo.writefln("total possible perms %,3s",fact(to!ulong(flowVlvs.length)));
+	fo.writefln("perms avoided        %,3s",fact(to!ulong(flowVlvs.length)) - breakcnt);
+	fo.writeln("best flow ",bestflow);
+	fo.writeln(saveArr); writeln(saveArr);
+
+	ubyte pv = firstVlv;
+	int tl = totalTime;
+	totalflow = 0;
+	fo.writeln("NN TX TC RT*TL= FL");
+	foreach(v;saveArr) {
+		tl -= tc2[pv][v];
+		if(tl < 0) break;
+		fo.writefln("%2s %2s %2s %2s*%2s=%3s",
+			v,vlvUbyteToTextLookup[v],tc2[pv][v],vlvToRate[v],
+			tl, tl*vlvToRate[v]);
+			totalflow += tl*vlvToRate[v];
+			pv = v;
+			myArr[v] = 0;
+	}
+	fo.writefln("              %4s",totalflow);
 }

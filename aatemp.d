@@ -5,6 +5,7 @@ import std.regex;
 import std.stdio;
 import std.file;
 import core.time: MonoTime;
+import std.conv;
 
 
 // Timed main() vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
@@ -12,11 +13,14 @@ void main(string[] args) {
 auto progStartTime = MonoTime.currTime;
 //-----------------------------------------------------------------------------
 
-ubyte[ubyte] aa = [1:7, 2:5, 13:35, 3:1];
-aa.writeln;
+ulong fact(ulong n){
+	return n>=2 ? (n) * fact(n-1) : 1;
+}
 
-foreach(key,value;aa) writeln(key," ",value);writeln;
-foreach(key,value;aa.byValue) writeln(key," ",value);writeln;
+writefln("%,3s",fact(to!ulong(args[1])));
+writefln("%,3s",uint.max);
+
+
 
 //-----------------------------------------------------------------------------
 auto progEndTime = MonoTime.currTime;
