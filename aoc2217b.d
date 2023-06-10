@@ -1,4 +1,4 @@
-﻿module aoc2217a2;
+﻿module aoc2217b;
 
 import std.algorithm;
 import std.stdio;
@@ -57,10 +57,12 @@ auto progStartTime = MonoTime.currTime;
 		rock = rocks[rk];
 		ulong prevMarkerTop = 0;
 		rockMarker = insertRock(stackHeight, rock);
-	// fo.write(rockMarker," ");
 		while(prevMarkerTop != rockMarker.top) { // falling rock
-			jetEffect();
-	// fo.write(" ",rockMarker);
+			// if(prevMarkerTop == 0) {
+			// 	batchJetEffect();
+			// } else {
+				jetEffect();
+			// }
 			// if the stack height is unchanged after a rock fall event, the rock has settled
 			prevMarkerTop = rockMarker.top;
 			result = fallEffect();
@@ -68,11 +70,8 @@ auto progStartTime = MonoTime.currTime;
 		chamberShapeReplace(rockMarker,"@","#");
 		stackHeight = rockMarker.top > stackHeight ? 
 						to!int(rockMarker.top) : stackHeight;
-		fo.writeln();
-		printChamber(stackHeight-10 > 0? stackHeight-10: 0, stackHeight + 5);
 		rockFalls++;
 	}
-fo.writeln();
 printChamber(0, stackHeight + 5);
 fo.writeln("stack height ", stackHeight);
 fo.writeln(rockFalls);
@@ -134,7 +133,7 @@ void printChamber(int low, int high) {
 
 RockMarker insertRock(int stackHeight, Rock rock) {
 	for(int i = 0; i < rock.h; i++) {
-		chamber[stackHeight + rockDropSpacing + 1 + i][3..(3 + rock.w)] = to!string(rock.yx[$-1-i]);
+		chamber[stackHeight + 1 + i][3..(3 + rock.w)] = to!string(rock.yx[$-1-i]);
 	}
 
 	RockMarker marker = {
@@ -147,8 +146,6 @@ RockMarker insertRock(int stackHeight, Rock rock) {
 
 void jetEffect() {
 	int jet = jets[jetIndex] == '>' ? 1 : -1;
-	fo.writeln(jets[jetIndex]);
-	// fo.writef("jet %2s jetIndex %5s",jet,jetIndex);
 	jetIndex++; jetIndex = jetIndex < jets.length ? jetIndex : 0;
 	char[9][] restore = chamber[rockMarker.bottom .. rockMarker.top + 1].dup;
 
@@ -200,8 +197,11 @@ void jetEffect() {
 			rockMarker.left++; rockMarker.right++;
 		}
 	}
-	printChamber(to!int(rockMarker.bottom), to!int(rockMarker.top));
 }
+
+
+
+
 
 Result fallEffect() {
 	char[9][] restore = chamber[rockMarker.bottom -1 .. rockMarker.top + 1].dup;
@@ -229,8 +229,6 @@ Result fallEffect() {
 	if(result != Result.end) {
 		rockMarker.top--; rockMarker.bottom--;
 	}
-	fo.writeln("v");
-	printChamber(to!int(rockMarker.bottom), to!int(rockMarker.top));
 	return result;
 }
 
