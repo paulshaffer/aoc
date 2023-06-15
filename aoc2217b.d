@@ -11,7 +11,7 @@ import std.array: replace;
 File f,fo,f2;
 
 enum rockDropSpacing = 3;
-enum numRocks = 2022;
+enum numRocks = 20_000;
 enum tallestRock = 4;
 enum chamberWidth = 9;
 enum chamberHeight = tallestRock * numRocks;
@@ -20,6 +20,8 @@ enum Result {move, ignore, end}
 char[chamberWidth][chamberHeight] chamber;
 string jets;
 ulong jetIndex;
+ulong[ulong][char[]] aa, rf;
+ulong[5000] stacktop;
 
 struct Rock {
 	char[][] yx; //row[] col[]
@@ -48,21 +50,19 @@ auto progStartTime = MonoTime.currTime;
 	// printRocks();
 
 	buildChamber();
-
+	bool found = false;
+	ulong rk_jeti;
 	jets = f2.readln.strip();
 	Result result;
 	int rk = -1, rockFalls = 0, stackHeight = 0;
-	while(rockFalls < numRocks ) { //numRocks
+	while(!found) { //numRocks
 		rk++; rk = rk < rocks.length ? rk : 0;
 		rock = rocks[rk];
 		ulong prevMarkerTop = 0;
 		rockMarker = insertRock(stackHeight, rock);
 		while(prevMarkerTop != rockMarker.top) { // falling rock
-			// if(prevMarkerTop == 0) {
-			// 	batchJetEffect();
-			// } else {
-				jetEffect();
-			// }
+			jetEffect();
+
 			// if the stack height is unchanged after a rock fall event, the rock has settled
 			prevMarkerTop = rockMarker.top;
 			result = fallEffect();
@@ -71,10 +71,40 @@ auto progStartTime = MonoTime.currTime;
 		stackHeight = rockMarker.top > stackHeight ? 
 						to!int(rockMarker.top) : stackHeight;
 		rockFalls++;
+		stacktop[rockFalls] = stackHeight;
+		rk_jeti = ((rk * 10_000) + jetIndex);
+		aa[chamber[stackHeight]][rk_jeti]++;
+		if((aa[chamber[stackHeight]][rk_jeti] == 2) && (!found)) {
+			found = true;
+			fo.writefln("%5s %s %5s %5s %s %5s",
+				stackHeight,rk,jetIndex,aa[chamber[stackHeight]][rk_jeti],
+				chamber[stackHeight], rockFalls);
+		} else if(!found) {
+			fo.writefln("%5s %s %5s %5s %s %5s",
+				stackHeight,rk,jetIndex,aa[chamber[stackHeight]][rk_jeti],
+				chamber[stackHeight], rockFalls);
+			rf[chamber[stackHeight]][rk_jeti] = to!ulong(rockFalls);
+		}
 	}
-printChamber(0, stackHeight + 5);
-fo.writeln("stack height ", stackHeight);
-fo.writeln(rockFalls);
+	ulong firstrockFalls = rf[chamber[stackHeight]][rk_jeti];
+	ulong firstStackHeight = stacktop[firstrockFalls];
+	ulong rockDiff = rockFalls - firstrockFalls;
+	ulong stackDiff = stackHeight - firstStackHeight;
+	fo.writeln("firstStackHeight=",firstStackHeight," firstrockFalls=",firstrockFalls);
+	fo.writeln("rockDiff= ",rockDiff," stackDiff=",stackDiff);
+	ulong rockRepeats = (1_000_000_000_000 - firstrockFalls)/rockDiff;
+	ulong lastRocks = (1_000_000_000_000 - firstrockFalls)%rockDiff;
+	fo.writeln("rockRepeats=",rockRepeats," lastRocks=",lastRocks);
+	ulong stackRockRepeats = rockRepeats * stackDiff;
+	ulong lastStacks = stacktop[lastRocks + firstrockFalls] - stacktop[firstrockFalls];
+	fo.writeln("stackRockRepeats=",stackRockRepeats," lastStacks=",lastStacks);
+	fo.writefln("Stack Height = %s + %s + %s = %s",firstStackHeight,
+				stackRockRepeats,lastStacks,firstStackHeight+stackRockRepeats+lastStacks);
+
+// fo.writeln(aa.length);
+// printChamber(0, stackHeight + 5);
+// fo.writeln("stack height ", stackHeight);
+// fo.writeln(rockFalls);
 
 
 //-----------------------------------------------------------------------------
@@ -133,7 +163,7 @@ void printChamber(int low, int high) {
 
 RockMarker insertRock(int stackHeight, Rock rock) {
 	for(int i = 0; i < rock.h; i++) {
-		chamber[stackHeight + 1 + i][3..(3 + rock.w)] = to!string(rock.yx[$-1-i]);
+		chamber[stackHeight + rockDropSpacing + 1 + i][3..(3 + rock.w)] = to!string(rock.yx[$-1-i]);
 	}
 
 	RockMarker marker = {
@@ -198,10 +228,6 @@ void jetEffect() {
 		}
 	}
 }
-
-
-
-
 
 Result fallEffect() {
 	char[9][] restore = chamber[rockMarker.bottom -1 .. rockMarker.top + 1].dup;
