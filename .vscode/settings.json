@@ -1,3 +1,6 @@
 {
-	"editor.lineNumbers": "on"
+	"editor.lineNumbers": "on",
+	"dscanner.ignoredKeys": [
+		"dscanner.suspicious.object_const"
+	]
 }

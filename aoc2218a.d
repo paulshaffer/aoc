@@ -25,8 +25,8 @@ auto progStartTime = MonoTime.currTime;
 	fo = File("tempout.data","w");
 
 	foreach (record; f.byLine.joiner("\n").csvReader!(Tuple!(byte, byte, byte))) {
-		cubes[record[0]][record[1]][record[2]].sts = 0b0011_1111;
-		cubelist[record[0]][record[1]][record[2]]++;
+		cubes[record[0]+1][record[1]+1][record[2]+1].sts = 0b0011_1111;
+		cubelist[to!byte(record[0]+1)][to!byte(record[1]+1)][to!byte(record[2]+1)]++;
 	}
 	cubelist.rehash;
 
@@ -36,19 +36,55 @@ auto progStartTime = MonoTime.currTime;
 				if(cubes[x][y][z].xyn) {
 					byte zval = to!byte(z - 1);
 					if(zval >= 0) {
-						if(zval in cubelist[x][y]) {
-							cubes[x][y][z].xyn = 0;
+						if(cubes[x][y][zval].xyf) {
 							cubes[x][y][zval].xyf = 0;
-						}
+							cubes[x][y][z].xyn = 0;
+						}	
 					}
 				}
 				if(cubes[x][y][z].xyf) {
 					byte zval = to!byte(z + 1);
 					if(zval <= dims - 1) {
-						if(zval in cubelist[x][y]) {
-							cubes[x][y][z].xyf = 0;
+						if(cubes[x][y][zval].xyn) {
 							cubes[x][y][zval].xyn = 0;
-						}
+							cubes[x][y][z].xyf = 0;
+						}	
+					}
+				}
+				if(cubes[x][y][z].xzn) {
+					byte yval = to!byte(y - 1);
+					if(yval >= 0) {
+						if(cubes[x][yval][z].xzf) {
+							cubes[x][yval][z].xzf = 0;
+							cubes[x][y][z].xzn = 0;
+						}	
+					}
+				}
+				if(cubes[x][y][z].xzf) {
+					byte yval = to!byte(y + 1);
+					if(yval <= dims - 1) {
+						if(cubes[x][yval][z].xzn) {
+							cubes[x][yval][z].xzn = 0;
+							cubes[x][y][z].xzf = 0;
+						}	
+					}
+				}
+				if(cubes[x][y][z].yzn) {
+					byte xval = to!byte(x - 1);
+					if(xval >= 0) {
+						if(cubes[xval][y][z].yzf) {
+							cubes[xval][y][z].yzf = 0;
+							cubes[x][y][z].yzn = 0;
+						}	
+					}
+				}
+				if(cubes[x][y][z].yzf) {
+					byte xval = to!byte(x + 1);
+					if(xval <= dims - 1) {
+						if(cubes[xval][y][z].yzn) {
+							cubes[xval][y][z].yzn = 0;
+							cubes[x][y][z].yzf = 0;
+						}	
 					}
 				}
 			}
